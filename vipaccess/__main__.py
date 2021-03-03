@@ -191,7 +191,7 @@ def main():
                    help="File in which to store the new credential (default ~/.vipaccess)")
     pprov.add_argument('-i', '--issuer', default="VIP Access", action='store',
                        help="Specify the issuer name to use (default: %(default)s)")
-    pprov.add_argument('-t', '--token-model', default='SYMC',
+    pprov.add_argument('-t', '--token-model', default='VSMT',
                       help='VIP Access token model. Often SYMC/VSMT ("mobile" token, default) or '
                            'SYDC/VSST ("desktop" token). Some clients only accept one or the other. '
                            "Other more obscure token types also exist: "
