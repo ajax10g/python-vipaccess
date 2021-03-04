@@ -28,7 +28,7 @@ if [[ "$@" =~ $regex ]]; then
 	cat ${DIR}/$uri | sed -n 3p -| sed 's/\s\+\(.\+digits=6\).*/\1/' | qrencode -t UTF8
 	# Print expiry in local time
 	echo expiry $(date -d $(cat ${DIR}/$f0 | sed -n 's/expiry//p'))
-	# sudo rm -f ${DIR}/$f0 ${DIR}/$uri && echo The unencrypted files ${DIR}/$f0, ${DIR}/$uri has been removed.
+	sudo rm -f ${DIR}/$f0 ${DIR}/$uri && echo The unencrypted files ${DIR}/$f0, ${DIR}/$uri has been removed.
 	exit 0
 fi
 
