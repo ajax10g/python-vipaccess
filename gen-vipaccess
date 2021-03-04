@@ -1,5 +1,8 @@
 #!/bin/bash
 DIR=/tmp
+TTY=$(tty)
+
+# ... provision -o ...
 regex="(provision) -o ([^ ]+)"
 if [[ "$@" =~ $regex ]]; then
 	c="${BASH_REMATCH[1]}"
@@ -14,6 +17,7 @@ if [[ "$@" =~ $regex ]]; then
 	exit 0
 fi
 
+# ... uri -f ...
 regex="(uri) -f ([^ ]+)"
 if [[ "$@" =~ $regex ]]; then
 	c="${BASH_REMATCH[1]}"
@@ -21,14 +25,44 @@ if [[ "$@" =~ $regex ]]; then
 	d=$(dirname -- $p)
 	f=$(basename -- "$p")
 	f0=${f%.*}
-	uri=${f0}.uri
+	fx=${f0}.fx
 
+	# Decrypt then invoke python-vipaccess
 	gpg2 -q -d $p > ${DIR}/$f0
-	docker run --rm -v ${DIR}:/root python-vipaccess uri -f /root/$f0 > ${DIR}/$uri
-	cat ${DIR}/$uri | sed -n 3p -| sed 's/\s\+\(.\+digits=6\).*/\1/' | qrencode -t UTF8
+	docker run --rm -v ${DIR}:/root python-vipaccess uri -f /root/$f0 > ${DIR}/$fx
+
+	# Generate QR code
+	cat ${DIR}/$fx | sed -n 3p -| sed 's/\s\+\(.\+digits=6\).*/\1/' | qrencode -t UTF8
+
+	# Print ID
+	# Remove any trailing \n then tee to tty and xclip
+	echo id $(cat ${DIR}/$f0 | sed -n 's/id //p') | tee "${TTY}" | awk '{print($2)}' | tr -d '\n' | xclip -sel clip
+	echo "The ID string has been copied into the xclipboard; right-click then paste to paste the text :)"
+
 	# Print expiry in local time
 	echo expiry $(date -d $(cat ${DIR}/$f0 | sed -n 's/expiry//p'))
-	sudo rm -f ${DIR}/$f0 ${DIR}/$uri && echo The unencrypted files ${DIR}/$f0, ${DIR}/$uri has been removed.
+	sudo rm -f ${DIR}/$f0 ${DIR}/$fx && echo The unencrypted files ${DIR}/$f0, ${DIR}/$fx have been removed.
+	exit 0
+fi
+
+# ... show -f ...
+regex="(show) -f ([^ ]+)"
+if [[ "$@" =~ $regex ]]; then
+	c="${BASH_REMATCH[1]}"
+	p="${BASH_REMATCH[2]}"
+	d=$(dirname -- $p)
+	f=$(basename -- "$p")
+	f0=${f%.*}
+
+	gpg2 -q -d $p > ${DIR}/$f0
+
+	# Remove any trailing \n then tee to tty and xclip
+	docker run --rm -v ${DIR}:/root python-vipaccess show -f /root/$f0 | tee "${TTY}" | tr -d '\n' | xclip -sel clip
+	echo "The 6-digits TOTP code has been copied into the xclipboard; right-click then paste to paste the text :)"
+
+	# Print expiry in local time
+	echo expiry $(date -d $(cat ${DIR}/$f0 | sed -n 's/expiry//p'))
+	sudo rm -f ${DIR}/$f0 && echo The unencrypted file ${DIR}/$f0 has been removed.
 	exit 0
 fi
 
