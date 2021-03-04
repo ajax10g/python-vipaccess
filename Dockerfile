@@ -18,6 +18,6 @@ RUN apk add --no-cache --virtual .build-deps \
   && apk add --no-cache libxml2 libxslt \
   && pip3 install --no-cache-dir . \
   && find /usr/local -name *.pyo -o -name *.pyc -exec rm -f '{}' \; \
-  && apk del .build-deps && touch /root/.vipaccess
+  && apk del .build-deps
 
 ENTRYPOINT ["/usr/local/bin/vipaccess"]

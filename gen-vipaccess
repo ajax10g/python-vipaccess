@@ -1,0 +1,33 @@
+#!/bin/bash
+DIR=/tmp
+regex="(provision) -o ([^ ]+)"
+if [[ "$@" =~ $regex ]]; then
+	c="${BASH_REMATCH[1]}"
+	p="${BASH_REMATCH[2]}"
+	d=`dirname $p`
+	f=`basename $p`
+	
+	sudo rm -f ${DIR}/$f
+	docker run --rm -v ${DIR}:/root python-vipaccess $c -o /root/$f > /dev/null 2>&1
+	sudo cat ${DIR}/$f | gpg2 --yes -r clpham -q -a -e --output $p.asc - && chmod go-rwx $p.asc
+	sudo rm -f ${DIR}/$f && echo The unencrypted file ${DIR}/$f has been removed.
+	exit 0
+fi
+
+regex="(uri) -f ([^ ]+)"
+if [[ "$@" =~ $regex ]]; then
+	c="${BASH_REMATCH[1]}"
+	p="${BASH_REMATCH[2]}"
+	d=$(dirname -- $p)
+	f=$(basename -- "$p")
+	f0=${f%.*}
+	uri=${f0}.uri
+
+	gpg2 -q -d $p > ${DIR}/$f0
+	docker run --rm -v ${DIR}:/root python-vipaccess uri -f /root/$f0 > ${DIR}/$uri
+	cat ${DIR}/$uri | sed -n 3p -| sed 's/\s\+\(.\+digits=6\).*/\1/' | qrencode -t UTF8
+	sudo rm -f ${DIR}/$f0 ${DIR}/$uri && echo The unencrypted files ${DIR}/$f, ${DIR}/$uri has been removed.
+	exit 0
+fi
+
+echo docker run --rm -v ${DIR}:/root python-vipaccess $@
